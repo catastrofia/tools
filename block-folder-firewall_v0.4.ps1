@@ -1,20 +1,30 @@
 #Requires -RunAsAdministrator
 
 <#
-.SYNOPSIS  Creates Windows Firewall rules to block all executables in specified paths.
+.SYNOPSIS
+    Creates Windows Firewall rules to block all executables in specified paths.
 .DESCRIPTION
     Scans directories for .exe files and creates inbound/outbound block rules.
     Uses fast registry-based lookup to detect existing rules.
     Exit codes: 0 = success, 1 = no valid paths, 2 = one or more rules failed to create.
-.PARAMETER Path       One or more directory paths to scan for executables.
-.PARAMETER SkipCheck  Skip checking for existing rules (faster but may create duplicates).
-.PARAMETER WhatIf     Show what would be done without creating rules.
-.PARAMETER LogFile    Path to save execution log.
-.PARAMETER RulePrefix Prefix for rule names (default: "Block").
-.PARAMETER GroupName  Group name for organizing rules in Windows Firewall UI.
-.EXAMPLE  .\Block-Programs.ps1 -Path "C:\Games", "C:\Apps"
-.EXAMPLE  .\Block-Programs.ps1 -p "C:\Games" -WhatIf
-.EXAMPLE  .\Block-Programs.ps1 -p "C:\Games" -LogFile "C:\Logs\firewall.log"
+.PARAMETER Path
+    One or more directory paths to scan for executables.
+.PARAMETER SkipCheck
+    Skip checking for existing rules (faster but may create duplicates).
+.PARAMETER WhatIf
+    Show what would be done without creating rules.
+.PARAMETER LogFile
+    Path to save execution log.
+.PARAMETER RulePrefix
+    Prefix for rule names (default: "Block").
+.PARAMETER GroupName
+    Group name for organizing rules in Windows Firewall UI.
+.EXAMPLE
+    .\block-folder-firewall_v0.4.ps1 -Path "C:\Games", "C:\Apps"
+.EXAMPLE
+    .\block-folder-firewall_v0.4.ps1 -Path "C:\Games" -WhatIf
+.EXAMPLE
+    .\block-folder-firewall_v0.4.ps1 -Path "C:\Games" -LogFile "C:\Logs\firewall.log"
 #>
 
 param(
