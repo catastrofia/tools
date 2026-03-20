@@ -11,8 +11,8 @@ A PowerShell script that scans directories for `.exe` files and creates Windows 
 ## Usage
 
 ```powershell
-.\block-folder-firewall_v0.3.ps1 -Path "C:\Games"
-.\block-folder-firewall_v0.3.ps1 -Path "C:\Games", "C:\Apps"
+.\block-folder-firewall_v0.4.ps1 -Path "C:\Games"
+.\block-folder-firewall_v0.4.ps1 -Path "C:\Games", "C:\Apps"
 ```
 
 ## Parameters
@@ -30,13 +30,13 @@ A PowerShell script that scans directories for `.exe` files and creates Windows 
 
 ```powershell
 # Preview without making changes
-.\block-folder-firewall_v0.3.ps1 -Path "C:\Games" -WhatIf
+.\block-folder-firewall_v0.4.ps1 -Path "C:\Games" -WhatIf
 
 # Block all exes in a folder and save a log
-.\block-folder-firewall_v0.3.ps1 -Path "C:\Games" -LogFile "C:\Logs\firewall.log"
+.\block-folder-firewall_v0.4.ps1 -Path "C:\Games" -LogFile "C:\Logs\firewall.log"
 
 # Skip duplicate detection for faster execution
-.\block-folder-firewall_v0.3.ps1 -Path "C:\Games" -SkipCheck
+.\block-folder-firewall_v0.4.ps1 -Path "C:\Games" -SkipCheck
 ```
 
 ## How It Works
@@ -46,6 +46,14 @@ A PowerShell script that scans directories for `.exe` files and creates Windows 
 3. Scans the directories recursively for `.exe` files
 4. Prompts for confirmation if more than 10 executables are found
 5. Creates inbound and outbound block rules, skipping any already blocked
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success (or no executables found) |
+| `1` | No valid paths provided |
+| `2` | One or more rules failed to create |
 
 ## Managing Created Rules
 
