@@ -55,21 +55,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$script:LogEntries = [System.Collections.Generic.List[string]]::new()
 
 function Write-Log {
-    param(
-        [string]$Message,
-        [string]$Color = "White",
-        [switch]$NoConsole
-    )
-
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logMessage = "[$timestamp] $Message"
-    $script:LogEntries.Add($logMessage)
-
-    if (-not $NoConsole) {
-        Write-Host $Message -ForegroundColor $Color
+    param([string]$Message, [string]$Color = "White", [switch]$NoConsole)
+    if (-not $NoConsole) { Write-Host $Message -ForegroundColor $Color }
+    if ($LogFile) {
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Add-Content -Path $LogFile -Value "[$timestamp] $Message" -Encoding UTF8
     }
 }
 
@@ -79,18 +71,6 @@ function Resolve-NormalizedPath {
     if ($ExpandEnv) { $PathString = [System.Environment]::ExpandEnvironmentVariables($PathString) }
     try   { return [System.IO.Path]::GetFullPath($PathString).ToLower().TrimEnd('\') }
     catch { return $PathString.ToLower().TrimEnd('\') }
-}
-
-function Save-Log {
-    if ($LogFile -and $script:LogEntries.Count -gt 0) {
-        try {
-            $script:LogEntries | Out-File -FilePath $LogFile -Encoding UTF8
-            Write-Host "Log saved to: $LogFile" -ForegroundColor Cyan
-        }
-        catch {
-            Write-Host "Failed to save log: $($_.Exception.Message)" -ForegroundColor Red
-        }
-    }
 }
 
 $successCount = 0
@@ -131,7 +111,6 @@ foreach ($p in $Path) {
 
 if ($validPaths.Count -eq 0) {
     Write-Log "`n[FAIL] No valid paths provided." -Color Red
-    Save-Log
     exit 1
 }
 
@@ -240,7 +219,6 @@ $totalExes = $exeFiles.Count
 
 if ($totalExes -eq 0) {
     Write-Log "[FAIL] No executables found." -Color Yellow
-    Save-Log
     exit 0
 }
 
@@ -252,7 +230,6 @@ if (-not $WhatIf -and $totalExes -gt 10) {
 
     if ($confirm -notmatch '^[Yy]') {
         Write-Log "Operation cancelled by user." -Color Yellow
-        Save-Log
         exit 0
     }
 }
@@ -335,15 +312,13 @@ Write-Log "Skipped:            $skippedCount" -Color Yellow
 Write-Log "Failed:             $errorCount" -Color Red
 Write-Log "Time:               $($stopwatch.Elapsed.ToString('mm\:ss\.fff'))" -Color Cyan
 Write-Log "========================================" -Color Cyan
+if ($LogFile) { Write-Host "Log saved to: $LogFile" -ForegroundColor Cyan }
 
 if (-not $WhatIf -and $successCount -gt 0) {
     Write-Log "`nTIPS:" -Color Cyan
     Write-Log "   View rules:   Get-NetFirewallRule -Group '$GroupName'" -Color DarkGray
     Write-Log "   Remove rules: Get-NetFirewallRule -Group '$GroupName' | Remove-NetFirewallRule" -Color DarkGray
 }
-
-# Save log if specified
-Save-Log
 
 # Exit with appropriate code
 if ($errorCount -gt 0) {
