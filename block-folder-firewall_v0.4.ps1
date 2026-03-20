@@ -5,6 +5,7 @@
 .DESCRIPTION
     Scans directories for .exe files and creates inbound/outbound block rules.
     Uses fast registry-based lookup to detect existing rules.
+    Exit codes: 0 = success, 1 = no valid paths, 2 = one or more rules failed to create.
 .PARAMETER Path       One or more directory paths to scan for executables.
 .PARAMETER SkipCheck  Skip checking for existing rules (faster but may create duplicates).
 .PARAMETER WhatIf     Show what would be done without creating rules.
@@ -141,7 +142,7 @@ foreach ($validPath in $validPaths) {
 }
 
 $totalExes = $exeFiles.Count
-if ($totalExes -eq 0) { Write-Log "[FAIL] No executables found." -Color Yellow; exit 0 }
+if ($totalExes -eq 0) { Write-Log "[OK] No executables found." -Color Yellow; exit 0 }
 Write-Log "[OK] Found $totalExes unique executables" -Color Green
 if (-not $WhatIf -and $totalExes -gt 10) {
     Write-Host "`n[WARN] About to create firewall rules for $totalExes executables." -ForegroundColor Yellow
