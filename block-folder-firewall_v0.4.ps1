@@ -84,44 +84,12 @@ function Write-Log {
     }
 }
 
-function Expand-EnvironmentPath {
-    <#
-    .SYNOPSIS
-        Expands environment variables in a path and normalizes it.
-    #>
-    param([string]$PathString)
-
-    if ([string]::IsNullOrWhiteSpace($PathString)) {
-        return $null
-    }
-
-    # Expand environment variables
-    $expanded = [System.Environment]::ExpandEnvironmentVariables($PathString)
-
-    # Normalize the path
-    try {
-        $normalized = [System.IO.Path]::GetFullPath($expanded)
-        return $normalized.ToLower().TrimEnd('\')
-    }
-    catch {
-        return $expanded.ToLower().TrimEnd('\')
-    }
-}
-
-function Get-NormalizedPath {
-    <#
-    .SYNOPSIS
-        Normalizes a filesystem path for consistent comparison.
-    #>
-    param([string]$PathString)
-
-    try {
-        $normalized = [System.IO.Path]::GetFullPath($PathString)
-        return $normalized.ToLower().TrimEnd('\')
-    }
-    catch {
-        return $PathString.ToLower().TrimEnd('\')
-    }
+function Resolve-NormalizedPath {
+    param([string]$PathString, [switch]$ExpandEnv)
+    if ([string]::IsNullOrWhiteSpace($PathString)) { return $null }
+    if ($ExpandEnv) { $PathString = [System.Environment]::ExpandEnvironmentVariables($PathString) }
+    try   { return [System.IO.Path]::GetFullPath($PathString).ToLower().TrimEnd('\') }
+    catch { return $PathString.ToLower().TrimEnd('\') }
 }
 
 function Save-Log {
@@ -161,7 +129,7 @@ $validPaths = [System.Collections.Generic.List[string]]::new()
 $seenPaths = @{}
 
 foreach ($p in $Path) {
-    $normalizedP = Get-NormalizedPath -PathString $p
+    $normalizedP = Resolve-NormalizedPath -PathString $p
 
     if ($seenPaths.ContainsKey($normalizedP)) {
         Write-Log "⊘ Duplicate path (skipped): $p" -Color DarkYellow
@@ -214,7 +182,7 @@ if (-not $SkipCheck) {
 
             if ($parts['Action'] -eq 'Block' -and $parts['App'] -and $isEnabled) {
                 # Expand environment variables
-                $appPath = Expand-EnvironmentPath -PathString $parts['App']
+                $appPath = Resolve-NormalizedPath -PathString $parts['App'] -ExpandEnv
 
                 if ($appPath) {
                     $ruleCount++
@@ -247,7 +215,7 @@ if (-not $SkipCheck) {
                 $rule = $_
                 $appFilter = $rule | Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue
                 if ($appFilter -and $appFilter.Program -and $appFilter.Program -ne 'Any') {
-                    $programPath = Get-NormalizedPath -PathString $appFilter.Program
+                    $programPath = Resolve-NormalizedPath -PathString $appFilter.Program
                     if (-not $blockRulesLookup.ContainsKey($programPath)) {
                         $blockRulesLookup[$programPath] = @{ 'Inbound' = $false; 'Outbound' = $false }
                     }
@@ -278,7 +246,7 @@ $seenExePaths = @{}
 
 foreach ($validPath in $validPaths) {
     Get-ChildItem -Recurse -Path $validPath -Filter *.exe -ErrorAction SilentlyContinue | ForEach-Object {
-        $normalizedExePath = Get-NormalizedPath -PathString $_.FullName
+        $normalizedExePath = Resolve-NormalizedPath -PathString $_.FullName
 
         if (-not $seenExePaths.ContainsKey($normalizedExePath)) {
             $seenExePaths[$normalizedExePath] = $true
