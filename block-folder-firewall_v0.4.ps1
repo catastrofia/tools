@@ -115,22 +115,22 @@ foreach ($p in $Path) {
     $normalizedP = Resolve-NormalizedPath -PathString $p
 
     if ($seenPaths.ContainsKey($normalizedP)) {
-        Write-Log "⊘ Duplicate path (skipped): $p" -Color DarkYellow
+        Write-Log "[SKIP] Duplicate path (skipped): $p" -Color DarkYellow
         continue
     }
 
     if (Test-Path -Path $p -PathType Container) {
         $validPaths.Add($p)
         $seenPaths[$normalizedP] = $true
-        Write-Log "✓ Valid path: $p" -Color Green
+        Write-Log "[OK] Valid path: $p" -Color Green
     }
     else {
-        Write-Log "✗ Invalid path: $p" -Color Red
+        Write-Log "[FAIL] Invalid path: $p" -Color Red
     }
 }
 
 if ($validPaths.Count -eq 0) {
-    Write-Log "`n✗ ERROR: No valid paths provided." -Color Red
+    Write-Log "`n[FAIL] ERROR: No valid paths provided." -Color Red
     Save-Log
     exit 1
 }
@@ -138,7 +138,7 @@ if ($validPaths.Count -eq 0) {
 $blockRulesLookup = @{}
 
 if (-not $SkipCheck) {
-    Write-Log "`n⚡ Loading firewall rules (fast registry method)..." -Color Yellow
+    Write-Log "`n>> Loading firewall rules (fast registry method)..." -Color Yellow
 
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"
 
@@ -184,10 +184,10 @@ if (-not $SkipCheck) {
             }
         }
 
-        Write-Log "✓ Loaded $ruleCount block rules in $($stopwatch.ElapsedMilliseconds)ms" -Color Green
+        Write-Log "[OK] Loaded $ruleCount block rules in $($stopwatch.ElapsedMilliseconds)ms" -Color Green
     }
     catch {
-        Write-Log "⚠ Registry read failed: $($_.Exception.Message)" -Color Yellow
+        Write-Log "[WARN] Registry read failed: $($_.Exception.Message)" -Color Yellow
         Write-Log "  Falling back to cmdlet method (slower)..." -Color Yellow
 
         try {
@@ -204,16 +204,16 @@ if (-not $SkipCheck) {
                 }
             }
 
-            Write-Log "✓ Loaded rules via cmdlet fallback" -Color Green
+            Write-Log "[OK] Loaded rules via cmdlet fallback" -Color Green
         }
         catch {
-            Write-Log "✗ Failed to load firewall rules: $($_.Exception.Message)" -Color Red
+            Write-Log "[FAIL] Failed to load firewall rules: $($_.Exception.Message)" -Color Red
             Write-Log "  Continuing without duplicate detection..." -Color Yellow
         }
     }
 }
 else {
-    Write-Log "`n⚡ Skipping rule check (fast mode)" -Color Magenta
+    Write-Log "`n>> Skipping rule check (fast mode)" -Color Magenta
 }
 
 Write-Log "`nScanning for executables..." -Color Yellow
@@ -239,15 +239,15 @@ foreach ($validPath in $validPaths) {
 $totalExes = $exeFiles.Count
 
 if ($totalExes -eq 0) {
-    Write-Log "✗ No executables found." -Color Yellow
+    Write-Log "[FAIL] No executables found." -Color Yellow
     Save-Log
     exit 0
 }
 
-Write-Log "✓ Found $totalExes unique executables" -Color Green
+Write-Log "[OK] Found $totalExes unique executables" -Color Green
 
 if (-not $WhatIf -and $totalExes -gt 10) {
-    Write-Host "`n⚠ WARNING: About to create firewall rules for $totalExes executables." -ForegroundColor Yellow
+    Write-Host "`n[WARN] WARNING: About to create firewall rules for $totalExes executables." -ForegroundColor Yellow
     $confirm = Read-Host "Continue? (Y/N)"
 
     if ($confirm -notmatch '^[Yy]') {
@@ -280,7 +280,7 @@ foreach ($exe in $exeFiles) {
     }
 
     if ($hasInboundBlock -and $hasOutboundBlock) {
-        Write-Log "⊘ Already blocked: $exeName" -Color DarkYellow
+        Write-Log "[SKIP] Already blocked: $exeName" -Color DarkYellow
         $skippedCount++
     }
     else {
@@ -310,11 +310,11 @@ foreach ($exe in $exeFiles) {
                     $createdRules.Add("Out")
                 }
 
-                Write-Log "✓ Blocked: $exeName [$($createdRules -join '/')]" -Color Green
+                Write-Log "[OK] Blocked: $exeName [$($createdRules -join '/')]" -Color Green
                 $successCount++
             }
             catch {
-                Write-Log "✗ Failed: $exeName - $($_.Exception.Message)" -Color Red
+                Write-Log "[FAIL] Failed: $exeName - $($_.Exception.Message)" -Color Red
                 $errorCount++
             }
         }
@@ -337,7 +337,7 @@ Write-Log "Time:               $($stopwatch.Elapsed.ToString('mm\:ss\.fff'))" -C
 Write-Log "========================================" -Color Cyan
 
 if (-not $WhatIf -and $successCount -gt 0) {
-    Write-Log "`n💡 TIPS:" -Color Cyan
+    Write-Log "`nTIP:" -Color Cyan
     Write-Log "   View rules:   Get-NetFirewallRule -Group '$GroupName'" -Color DarkGray
     Write-Log "   Remove rules: Get-NetFirewallRule -Group '$GroupName' | Remove-NetFirewallRule" -Color DarkGray
 }
