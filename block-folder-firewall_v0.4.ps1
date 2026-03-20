@@ -130,7 +130,7 @@ foreach ($p in $Path) {
 }
 
 if ($validPaths.Count -eq 0) {
-    Write-Log "`n[FAIL] ERROR: No valid paths provided." -Color Red
+    Write-Log "`n[FAIL] No valid paths provided." -Color Red
     Save-Log
     exit 1
 }
@@ -247,7 +247,7 @@ if ($totalExes -eq 0) {
 Write-Log "[OK] Found $totalExes unique executables" -Color Green
 
 if (-not $WhatIf -and $totalExes -gt 10) {
-    Write-Host "`n[WARN] WARNING: About to create firewall rules for $totalExes executables." -ForegroundColor Yellow
+    Write-Host "`n[WARN] About to create firewall rules for $totalExes executables." -ForegroundColor Yellow
     $confirm = Read-Host "Continue? (Y/N)"
 
     if ($confirm -notmatch '^[Yy]') {
@@ -337,7 +337,7 @@ Write-Log "Time:               $($stopwatch.Elapsed.ToString('mm\:ss\.fff'))" -C
 Write-Log "========================================" -Color Cyan
 
 if (-not $WhatIf -and $successCount -gt 0) {
-    Write-Log "`nTIP:" -Color Cyan
+    Write-Log "`nTIPS:" -Color Cyan
     Write-Log "   View rules:   Get-NetFirewallRule -Group '$GroupName'" -Color DarkGray
     Write-Log "   Remove rules: Get-NetFirewallRule -Group '$GroupName' | Remove-NetFirewallRule" -Color DarkGray
 }
