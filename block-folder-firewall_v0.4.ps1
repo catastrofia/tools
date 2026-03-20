@@ -41,33 +41,22 @@ param(
     [Alias("p")]
     [string[]]$Path,
 
-    [Parameter(Mandatory=$false)]
     [Alias("s")]
     [switch]$SkipCheck,
 
-    [Parameter(Mandatory=$false)]
     [switch]$WhatIf,
 
-    [Parameter(Mandatory=$false)]
     [Alias("l")]
     [string]$LogFile,
 
-    [Parameter(Mandatory=$false)]
     [string]$RulePrefix = "Block",
 
-    [Parameter(Mandatory=$false)]
     [string]$GroupName = "Blocked Programs (Script)"
 )
 
-# ============================================
-# CONFIGURATION
-# ============================================
 $ErrorActionPreference = "Stop"
 $script:LogEntries = [System.Collections.Generic.List[string]]::new()
 
-# ============================================
-# HELPER FUNCTIONS
-# ============================================
 function Write-Log {
     param(
         [string]$Message,
@@ -104,9 +93,6 @@ function Save-Log {
     }
 }
 
-# ============================================
-# INITIALIZATION
-# ============================================
 $successCount = 0
 $errorCount = 0
 $skippedCount = 0
@@ -120,9 +106,6 @@ if ($WhatIf) {
     Write-Log "`n[WHATIF MODE] No rules will be created`n" -Color Magenta
 }
 
-# ============================================
-# VALIDATE PATHS
-# ============================================
 Write-Log "`nValidating paths..." -Color Yellow
 
 $validPaths = [System.Collections.Generic.List[string]]::new()
@@ -152,9 +135,6 @@ if ($validPaths.Count -eq 0) {
     exit 1
 }
 
-# ============================================
-# FAST REGISTRY-BASED RULE LOOKUP
-# ============================================
 $blockRulesLookup = @{}
 
 if (-not $SkipCheck) {
@@ -236,9 +216,6 @@ else {
     Write-Log "`n⚡ Skipping rule check (fast mode)" -Color Magenta
 }
 
-# ============================================
-# COLLECT EXE FILES (deduplicated)
-# ============================================
 Write-Log "`nScanning for executables..." -Color Yellow
 
 $exeFiles = [System.Collections.Generic.List[PSObject]]::new()
@@ -269,9 +246,6 @@ if ($totalExes -eq 0) {
 
 Write-Log "✓ Found $totalExes unique executables" -Color Green
 
-# ============================================
-# CONFIRMATION PROMPT
-# ============================================
 if (-not $WhatIf -and $totalExes -gt 10) {
     Write-Host "`n⚠ WARNING: About to create firewall rules for $totalExes executables." -ForegroundColor Yellow
     $confirm = Read-Host "Continue? (Y/N)"
@@ -283,14 +257,10 @@ if (-not $WhatIf -and $totalExes -gt 10) {
     }
 }
 
-# ============================================
-# PROCESS EXECUTABLES
-# ============================================
 Write-Log "`nCreating firewall rules..." -Color Cyan
 
 $currentIndex = 0
 $ruleIndex = 0
-$createdRuleNames = [System.Collections.Generic.List[string]]::new()
 
 foreach ($exe in $exeFiles) {
     $currentIndex++
@@ -333,13 +303,11 @@ foreach ($exe in $exeFiles) {
                 if (-not $hasInboundBlock) {
                     New-NetFirewallRule -DisplayName $inRuleName -Direction Inbound -Program $exePath -Action Block -Group $GroupName -ErrorAction Stop | Out-Null
                     $createdRules.Add("In")
-                    $createdRuleNames.Add($inRuleName)
                 }
 
                 if (-not $hasOutboundBlock) {
                     New-NetFirewallRule -DisplayName $outRuleName -Direction Outbound -Program $exePath -Action Block -Group $GroupName -ErrorAction Stop | Out-Null
                     $createdRules.Add("Out")
-                    $createdRuleNames.Add($outRuleName)
                 }
 
                 Write-Log "✓ Blocked: $exeName [$($createdRules -join '/')]" -Color Green
@@ -355,9 +323,6 @@ foreach ($exe in $exeFiles) {
 
 Write-Progress -Activity "Creating firewall rules" -Completed
 
-# ============================================
-# SUMMARY
-# ============================================
 $stopwatch.Stop()
 
 Write-Log "`n========================================" -Color Cyan
@@ -371,7 +336,7 @@ Write-Log "Failed:             $errorCount" -Color Red
 Write-Log "Time:               $($stopwatch.Elapsed.ToString('mm\:ss\.fff'))" -Color Cyan
 Write-Log "========================================" -Color Cyan
 
-if (-not $WhatIf -and $createdRuleNames.Count -gt 0) {
+if (-not $WhatIf -and $successCount -gt 0) {
     Write-Log "`n💡 TIPS:" -Color Cyan
     Write-Log "   View rules:   Get-NetFirewallRule -Group '$GroupName'" -Color DarkGray
     Write-Log "   Remove rules: Get-NetFirewallRule -Group '$GroupName' | Remove-NetFirewallRule" -Color DarkGray
