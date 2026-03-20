@@ -321,6 +321,7 @@ if (-not $WhatIf -and $totalExes -gt 10) {
 Write-Log "`nCreating firewall rules..." -Color Cyan
 
 $currentIndex = 0
+$ruleIndex = 0
 $createdRuleNames = [System.Collections.Generic.List[string]]::new()
 
 foreach ($exe in $exeFiles) {
@@ -345,11 +346,10 @@ foreach ($exe in $exeFiles) {
         $skippedCount++
     }
     else {
-        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss_fff"
+        $ruleIndex++
         $sanitizedName = $exeName -replace '[<>:"/\\|?*]', '_'
-
-        $inRuleName = "$RulePrefix $sanitizedName In [$timestamp]"
-        $outRuleName = "$RulePrefix $sanitizedName Out [$timestamp]"
+        $inRuleName  = "$RulePrefix $sanitizedName In [$ruleIndex]"
+        $outRuleName = "$RulePrefix $sanitizedName Out [$ruleIndex]"
 
         if ($WhatIf) {
             $actions = @()
@@ -396,7 +396,8 @@ Write-Log "`n========================================" -Color Cyan
 Write-Log "            SUMMARY" -Color Cyan
 Write-Log "========================================" -Color Cyan
 Write-Log "Executables found:  $totalExes" -Color White
-Write-Log "Blocked:            $successCount" -Color Green
+$blockedLabel = if ($WhatIf) { "Would block:       " } else { "Blocked:           " }
+Write-Log "$blockedLabel $successCount" -Color Green
 Write-Log "Skipped:            $skippedCount" -Color Yellow
 Write-Log "Failed:             $errorCount" -Color Red
 Write-Log "Time:               $($stopwatch.Elapsed.ToString('mm\:ss\.fff'))" -Color Cyan
